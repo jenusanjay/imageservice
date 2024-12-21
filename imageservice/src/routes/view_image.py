@@ -1,5 +1,6 @@
 from fastapi import APIRouter,Request,Response
 from utils import Metadata,MetadataInputModel
+from starlette.responses import JSONResponse
 
 
 router = APIRouter()
@@ -20,13 +21,13 @@ def view_image(request:Request):
             timestamp=timestamp
         ))
         
-        return Response(
+        return JSONResponse(
             content=image,
             status_code=200
         )
         
     except Exception as e:
-        return Response(
+        return JSONResponse(
             content=f"Failed to fetch: {e}",
             status_code=500
         )

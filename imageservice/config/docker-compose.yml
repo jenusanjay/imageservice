@@ -17,12 +17,12 @@ services:
       - KINESIS_STREAM_NAME=kinesis-stream
       - KINESIS_PROVIDER=kinesalite
       - SERVICES=apigateway,lambda,s3,dynamodb
-      - USE_SSL=true
+      - USE_SSL=false
     ports:
       - "4566:4566" 
       - "4510-4559:4510-4559" 
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-      - ./localstack/data:/tmp/localstack/data 
+      - ./localstack/data:/.tmp/localstack/data 
       - ./certs:/etc/localstack/certs 
 

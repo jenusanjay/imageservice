@@ -151,7 +151,7 @@ class DynamoDbWriter():
 class Metadata:
     def __init__(self,userId:str):
         self.userId = userId
-        self.writer =  DynamoDbWriter(tableName=os.environ.get("METADATA_TABLE_NAME"))
+        self.writer =  DynamoDbWriter()
 
     def extract_metadata(self,imagefile) -> MetadataModel:
         self.model = MetadataModel(

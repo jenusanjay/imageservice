@@ -4,6 +4,7 @@ import uuid
 from fastapi import APIRouter,Request, Response
 from PIL import Image
 from utils import Metadata
+from starlette.responses import JSONResponse
 
 router = APIRouter()
 
@@ -23,13 +24,13 @@ async def upload_image(request:Request):
         md = Metadata(userId=userId)
         md.write_image(image)
 
-        return Response(
+        return JSONResponse(
             content="Successfully uploaded",
             status_code=200
         )
         
     except Exception as e:
-        return Response(
+        return JSONResponse(
             content=f"Failed to upload: {e}",
             status_code=500
         )
