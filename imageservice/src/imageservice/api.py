@@ -1,6 +1,5 @@
 from fastapi import FastAPI
-from routes import upload_image
-from routes import list_images,delete_image,view_image,home
+from imageservice.routes import list_images,delete_image,view_image,home,upload_image
 
 app = FastAPI(
     title= "ImageService API",
@@ -17,5 +16,4 @@ app.include_router(view_image.router)
 
 if __name__ == "__main__":
     import uvicorn
-
     uvicorn.run("api:app", host="localhost", port=8000,reload=True)

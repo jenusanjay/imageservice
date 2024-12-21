@@ -1,3 +1,6 @@
+import base64
+import datetime
+from decimal import Decimal
 import os
 import time
 import traceback
@@ -9,25 +12,26 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from io import BytesIO
 
+logger = logging.Logger(None,"INFO")
 class ResponseModel(BaseModel):
     content : typing.Union[typing.Mapping,str]
     status_code: int
 
 class MetadataModel(BaseModel):        
     userId:str
-    timestamp :typing.Optional[int] = int(time.time())
-    _format : str
-    size : str
+    timestamp :typing.Optional[Decimal] = None
+    format : str
+    size : tuple
 
 class MetadaDataResponseModel(BaseModel):
     userId:str
-    timestamp:int
-    _format : str
-    size : str
+    timestamp:typing.Optional[Decimal] = None
+    format : str
+    size : tuple
 
 class MetadataInputModel(BaseModel):
     userId:str
-    timestamp:int
+    timestamp:typing.Optional[Decimal] = None
 
 class S3Writer():
     """
@@ -35,7 +39,7 @@ class S3Writer():
     :parameters
     """
     def __init__(self):
-        self.bucket_name = os.environ.get("IMAGE_BUCKET_NAME")
+        self.bucket_name = "imagebucket2345" #os.environ.get("IMAGE_BUCKET_NAME")
         self.client = boto3.client("s3")
     
     def upload_image(self,metadata:MetadataModel,body:bytes):
@@ -52,7 +56,7 @@ class S3Writer():
             Bucket=self.bucket_name,
             Key=key,
             Body=body,
-            ContentType=f"image/{metadata._format.lower()}",
+            ContentType=f"image/{metadata.format.lower()}",
         )
             logging.info(f"Successfully uploaded the image to the path {self.bucket_name}/{key}")
             return True
@@ -61,7 +65,7 @@ class S3Writer():
             return False
     
     def get_file_path_from_metadata(self,itemInfo:MetadataModel) -> str:
-        return "/".join(["s3:/",self.bucket_name,itemInfo.userId,itemInfo.timestamp,f'{itemInfo.timestamp}.{itemInfo._format}'])
+        return "/".join([itemInfo.userId,str(itemInfo.timestamp),f'{str(itemInfo.timestamp)}.{itemInfo.format.lower()}'])
     
     def get_image(self,itemInfo:MetadaDataResponseModel) -> bytes:
         """
@@ -69,13 +73,20 @@ class S3Writer():
         :parameters
         -   S3 Key : S3 Key of the stored object
         """
+        # s3://imagebucket2345/122445/1734786841/1734786841.jpeg
+        # s3://imagebucket2345/122445/1734786033/1734786033.jpeg
+
         key = self.get_file_path_from_metadata(itemInfo=itemInfo)
+        logger.info(key)
         try:
             response = self.client.get_object(
                         Bucket=self.bucket_name,
                         Key=key
                     )
-            return response["Body"].read()
+            image_stream =  base64.b64encode(response["Body"].read()).decode('utf-8')
+            # BytesIO(response["Body"].read())
+            return image_stream
+        
         except:
             logging.error(f"Failed to get the object, Reason {traceback.format_exc(chain=False)}")
             return False        
@@ -100,11 +111,12 @@ class S3Writer():
 class DynamoDbWriter():
     def __init__(self):
         self.dynamodb = boto3.resource("dynamodb")
-        tableName = os.environ.get("METADATA_TABLE_NAME")
+        tableName = "metadatatable" # os.environ.get("METADATA_TABLE_NAME","metadatatale")
         self.table = self.dynamodb.Table(tableName)
     
     def write_metadata(self,metadata:MetadataModel):
         try:
+            print(metadata.model_dump())
             self.table.put_item(Item=metadata.model_dump())
         except:
             logging.error(f"Failed to write metadata {traceback.format_exc(chain=False)}")
@@ -112,12 +124,17 @@ class DynamoDbWriter():
     def get_meta_item(self,userId:str,timestamp:int):
         try:
             response = self.table.query(
-            KeyConditionExpression=boto3.dynamodb.conditions.Key("partition_key").eq(userId) &
-            boto3.dynamodb.conditions.Key("sort_key").eq(timestamp)
+            KeyConditionExpression=boto3.dynamodb.conditions.Key("userId").eq(userId) &
+            boto3.dynamodb.conditions.Key("timestamp").eq(timestamp)
         )   
             #TODO: Update the Response
             if response.get("Items") != []:
-                return  MetadaDataResponseModel(response.get("Items")[0])
+                item = response.get("Items")[0]
+                return  MetadaDataResponseModel(
+                    userId=item.get("userId"),
+                    timestamp=item.get("timestamp"),
+                    format=item.get("format"),
+                    size=item.get("size"))
             else:
                 return None
             
@@ -128,10 +145,15 @@ class DynamoDbWriter():
     def get_meta_items(self,userId:str):
         try:
             response = self.table.query(
-            KeyConditionExpression=boto3.dynamodb.conditions.Key("partition_key").eq(userId)
+            KeyConditionExpression=boto3.dynamodb.conditions.Key('userId').eq(userId)
         )   
             if response.get("Items") != []:
-                return  [MetadaDataResponseModel(item) for item in response.get("Items") ]
+                return  [ MetadaDataResponseModel(
+                    userId=item.get("userId"),
+                    timestamp=item.get("timestamp"),
+                    format=item.get("format"),
+                    size=item.get("size")
+                ) for item in response.get("Items") ]
             else:
                 return None
             
@@ -143,8 +165,8 @@ class DynamoDbWriter():
         try:
             self.table.delete_item(
                 Key={
-                    "partition_key": userId, 
-                    "sort_key": timestamp  
+                    "userId": userId, 
+                    "timestamp": timestamp  
                 }
             )
             
@@ -160,16 +182,17 @@ class Metadata:
     def extract_metadata(self,imagefile) -> MetadataModel:
         self.model = MetadataModel(
             userId=self.userId,
-            _format=imagefile.format,
-            size=imagefile.size
+            format=imagefile.format,
+            size=imagefile.size,
+            timestamp=Decimal(str(datetime.datetime.now().timestamp()))
         )
         return self.model
     
-    def write_image(self,imagefile):
+    def write_image(self,imagefile,imagebytes):
         try:
             S3Repo = S3Writer()
             self.model =  self.extract_metadata(imagefile)
-            S3Repo.upload_image(metadata=self.model)
+            S3Repo.upload_image(metadata=self.model,body=imagebytes)
             self.writer.write_metadata(self.model)
             return self.model
         except:
@@ -185,7 +208,9 @@ class Metadata:
             metadata = dy.get_meta_item(userId=itemInfo.userId,timestamp=itemInfo.timestamp)
             S3Repo = S3Writer()
             image = S3Repo.get_image(itemInfo=metadata)
-            return image
+            return {
+                "timestamp":str(metadata.timestamp),
+                "image" : image }
         except:
             logging.error(f"Failed to get item {traceback.format_exc(chain=False)}")
             return None
@@ -196,18 +221,27 @@ class Metadata:
         thumbnails = []
         items = dy.get_meta_items(userId=self.userId)
         try:
-            for item in items:
-                image = S3Repo.get_image(itemInfo=item)
-                thumb = Image.open(BytesIO(image))
-                image.thumbnail((150, 150))
-                thumb_io = BytesIO()
-                image.save(thumb_io, format="JPEG")
+            if items:
+                for item in items:
+                    image = S3Repo.get_image(itemInfo=item)
+                    image_bytes = base64.b64decode(image)
+                    thumb = Image.open(BytesIO(image_bytes))
 
-                thumbnails.append({
-                    "timestamp" : item.timestamp,
-                    "thumbnail": StreamingResponse(thumb_io, media_type="image/jpeg")}
-                    )
-            return {"thumbnails": thumbnails}
+                    thumb.thumbnail((150, 150))
+
+                    thumb_io = BytesIO()
+                    thumb.save(thumb_io, format="JPEG")
+                    thumb.seek(0)
+                    thumbnail_base64 = base64.b64encode(thumb_io.getvalue()).decode('utf-8')
+
+                    thumbnails.append({
+                        "timestamp" : str(item.timestamp),
+                        "thumbnail": thumbnail_base64}
+                        )
+                return {"thumbnails": thumbnails}
+            
+            else:
+                None
 
         except:
             logging.error(f"Failed to get items {traceback.format_exc(chain=False)}")
@@ -218,7 +252,7 @@ class Metadata:
             dy = DynamoDbWriter()
             metadata = dy.get_meta_item(userId=itemInfo.userId,timestamp=itemInfo.timestamp)
             S3Repo = S3Writer()
-            image = S3Repo.delete_image(key=metadata)
+            image = S3Repo.delete_image(itemInfo=metadata)
             dy.delete_meta_item(userId=itemInfo.userId,timestamp=itemInfo.timestamp)
             return True
         except:

@@ -1,7 +1,7 @@
 
 from fastapi import APIRouter, Request
 from starlette.responses import JSONResponse
-from utils import ResponseModel
+from imageservice.utils import ResponseModel
 
 router = APIRouter()
 

@@ -1,5 +1,8 @@
+import ast
+from decimal import Decimal
+import json
 from fastapi import APIRouter, Query,Request,Response
-from utils import Metadata,MetadataInputModel, ResponseModel
+from imageservice.utils import Metadata,MetadataInputModel, ResponseModel
 from starlette.responses import JSONResponse
 
 
@@ -8,7 +11,7 @@ router = APIRouter()
 @router.get("/view",response_model=ResponseModel)
 def view_image(request:Request,
                 userId: str = Query(default=None, description="Id of the User to view images"),
-                 timestamp: int = Query(default=None, description="Timestamp of the image creation")):
+                 timestamp: Decimal = Query(default=None, description="Timestamp of the image creation")):
     """
     API used to view image
     - **userId**: The userID of the item to view in query parameters
@@ -20,9 +23,8 @@ def view_image(request:Request,
         md = Metadata(userId=userId)
         image = md.get_item(itemInfo=MetadataInputModel(
             userId=userId,
-            timestamp=timestamp
+            timestamp=Decimal(timestamp)
         ))
-        
         return JSONResponse(
             content=image,
             status_code=200

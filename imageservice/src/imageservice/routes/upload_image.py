@@ -3,7 +3,7 @@ import io,os
 import uuid
 from fastapi import APIRouter, Query,Request, Response, Body
 from PIL import Image
-from utils import Metadata, ResponseModel
+from imageservice.utils import Metadata, ResponseModel
 from starlette.responses import JSONResponse
 
 router = APIRouter()
@@ -18,13 +18,13 @@ async def upload_image(request:Request,
     - **body**: Image bytes to be sent in request body
     """
 
-    body = request.body()
+    body = await request.body()
     userId = request.query_params.get("userId")
     try:
         image_bytes = base64.b64decode(body)
         image = Image.open(io.BytesIO(image_bytes))
         md = Metadata(userId=userId)
-        md.write_image(image)
+        md.write_image(image,image_bytes)
 
         return JSONResponse(
             content="Successfully uploaded",

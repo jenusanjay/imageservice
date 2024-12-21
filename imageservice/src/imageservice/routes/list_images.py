@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Request, Response,Query
-from utils import Metadata, ResponseModel
+from imageservice.utils import Metadata, ResponseModel
 from starlette.responses import JSONResponse
 
 router = APIRouter()
@@ -24,7 +24,7 @@ def list_images(request:Request,
             )
         else:
             return JSONResponse(
-                content="Failed to delete image",
+                content="Failed to list images",
                 status_code=500
             ) 
         
