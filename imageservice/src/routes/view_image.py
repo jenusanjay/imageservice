@@ -1,11 +1,16 @@
 from fastapi import APIRouter,Request,Response
-from assignment.imageservice.src.utils import Metadata, S3Writer, MetadataInputModel
+from utils import Metadata,MetadataInputModel
 
 
 router = APIRouter()
 
 @router.get("/view")
 def view_image(request:Request):
+    """
+    API used to view image
+    - **userId**: The userID of the item to view in query parameters
+    - **timestamp**: The timestamp of the image creation in the App
+    """
     userId = request.query_params.get("userId")
     timestamp = request.query_params.get("timestamp")
     try:

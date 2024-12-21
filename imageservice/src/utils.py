@@ -153,7 +153,7 @@ class Metadata:
         self.userId = userId
         self.writer =  DynamoDbWriter(tableName=os.environ.get("METADATA_TABLE_NAME"))
 
-    def extract_metadata(self,imagefile:Image.ImageFile) -> MetadataModel:
+    def extract_metadata(self,imagefile) -> MetadataModel:
         self.model = MetadataModel(
             userId=self.userId,
             _format=imagefile.format,
@@ -161,7 +161,7 @@ class Metadata:
         )
         return self.model
     
-    def write_image(self,imagefile:Image.ImageFile):
+    def write_image(self,imagefile):
         try:
             S3Repo = S3Writer()
             self.model =  self.extract_metadata(imagefile)

@@ -9,6 +9,12 @@ router = APIRouter()
 
 @router.post("/upload")
 async def upload_image(request:Request):
+    """
+    API used to upload images
+    - **userId**: The userID of the item to upload in query parameters
+    - **body**: Image bytes to be sent in request body
+    """
+
     body = request.body()
     userId = request.query_params.get("userId")
     try:
