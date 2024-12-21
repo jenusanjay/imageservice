@@ -3,12 +3,12 @@ import io,os
 import uuid
 from fastapi import APIRouter, Query,Request, Response, Body
 from PIL import Image
-from utils import Metadata
+from utils import Metadata, ResponseModel
 from starlette.responses import JSONResponse
 
 router = APIRouter()
 
-@router.post("/upload")
+@router.post("/upload",response_model=ResponseModel)
 async def upload_image(request:Request,
                         userId: str = Query(default=None, description="Id of the User to Upload images"),
                         image: str = Body(default=None, description="Id of the User to Upload images")):

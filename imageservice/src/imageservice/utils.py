@@ -9,6 +9,10 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from io import BytesIO
 
+class ResponseModel(BaseModel):
+    content : typing.Union[typing.Mapping,str]
+    status_code: int
+
 class MetadataModel(BaseModel):        
     userId:str
     timestamp :typing.Optional[int] = int(time.time())
@@ -216,7 +220,7 @@ class Metadata:
             S3Repo = S3Writer()
             image = S3Repo.delete_image(key=metadata)
             dy.delete_meta_item(userId=itemInfo.userId,timestamp=itemInfo.timestamp)
-            return image
+            return True
         except:
             logging.error(f"Failed to delete items {traceback.format_exc(chain=False)}")
             return None

@@ -1,10 +1,10 @@
 from fastapi import APIRouter, Request, Response,Query
-from utils import Metadata
+from utils import Metadata, ResponseModel
 from starlette.responses import JSONResponse
 
 router = APIRouter()
 
-@router.get("/list")
+@router.get("/list",response_model=ResponseModel)
 def list_images(request:Request,
                 userId: str = Query(default=None, description="Id of the User to get images")):
     
@@ -17,10 +17,16 @@ def list_images(request:Request,
         md = Metadata(userId=userId)
         images = md.get_items(
         )
-        return JSONResponse(
-            content=images,
-            status_code=200
-        )
+        if images:
+            return JSONResponse(
+                content=images,
+                status_code=200
+            )
+        else:
+            return JSONResponse(
+                content="Failed to delete image",
+                status_code=500
+            ) 
         
     except Exception as e:
         return JSONResponse(
