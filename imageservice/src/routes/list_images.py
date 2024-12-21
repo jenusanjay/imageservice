@@ -4,7 +4,7 @@ from starlette.responses import JSONResponse
 
 router = APIRouter()
 
-@router.post("/list")
+@router.get("/list")
 def delete_image(request:Request):
     """
     API used to list images
