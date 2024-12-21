@@ -1,4 +1,4 @@
-from fastapi import APIRouter,Request,Response
+from fastapi import APIRouter, Query,Request,Response
 from utils import Metadata,MetadataInputModel
 from starlette.responses import JSONResponse
 
@@ -6,7 +6,9 @@ from starlette.responses import JSONResponse
 router = APIRouter()
 
 @router.get("/view")
-def view_image(request:Request):
+def view_image(request:Request,
+                userId: str = Query(default=None, description="Id of the User to view images"),
+                 timestamp: int = Query(default=None, description="Timestamp of the image creation")):
     """
     API used to view image
     - **userId**: The userID of the item to view in query parameters

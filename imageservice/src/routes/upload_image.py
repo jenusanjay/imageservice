@@ -1,7 +1,7 @@
 import base64
 import io,os
 import uuid
-from fastapi import APIRouter,Request, Response
+from fastapi import APIRouter, Query,Request, Response, Body
 from PIL import Image
 from utils import Metadata
 from starlette.responses import JSONResponse
@@ -9,7 +9,9 @@ from starlette.responses import JSONResponse
 router = APIRouter()
 
 @router.post("/upload")
-async def upload_image(request:Request):
+async def upload_image(request:Request,
+                        userId: str = Query(default=None, description="Id of the User to Upload images"),
+                        image: str = Body(default=None, description="Id of the User to Upload images")):
     """
     API used to upload images
     - **userId**: The userID of the item to upload in query parameters

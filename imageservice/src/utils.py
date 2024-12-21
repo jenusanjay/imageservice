@@ -186,7 +186,7 @@ class Metadata:
             logging.error(f"Failed to get item {traceback.format_exc(chain=False)}")
             return None
         
-    def get_items(self) -> list:
+    def get_items(self) -> dict:
         dy = DynamoDbWriter()
         S3Repo = S3Writer()
         thumbnails = []
@@ -203,8 +203,8 @@ class Metadata:
                     "timestamp" : item.timestamp,
                     "thumbnail": StreamingResponse(thumb_io, media_type="image/jpeg")}
                     )
-                
             return {"thumbnails": thumbnails}
+
         except:
             logging.error(f"Failed to get items {traceback.format_exc(chain=False)}")
             return None

@@ -13,6 +13,7 @@ app.include_router(list_images.router)
 app.include_router(delete_image.router)
 app.include_router(view_image.router)
 app.include_router(home.router)
+
 if __name__ == "__main__":
     import uvicorn
 

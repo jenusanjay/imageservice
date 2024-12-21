@@ -1,11 +1,13 @@
-from fastapi import APIRouter,Request,Response
+from fastapi import APIRouter, Query,Request,Response
 from utils import Metadata, MetadataInputModel
 from starlette.responses import JSONResponse
 
 router = APIRouter()
 
 @router.post("/delete")
-def delete_image(request:Request):
+def delete_image(request:Request,
+                 userId: str = Query(default=None, description="Id of the User to delete images"),
+                 timestamp: int = Query(default=None, description="Timestamp of the image creation")):
     """
     API used to delete image
     - **userId**: The userID of the item to view in query parameters
