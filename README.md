@@ -10,5 +10,11 @@ Project to read, write and delete images, a service layer of an application like
 - Boto3
 - and other light modules
 
+# Docs
+
+API Documentation is available in Swagger. It can access at the url,
+http://localhost:8000/docs
+
 # Testing
 In porgress
+
