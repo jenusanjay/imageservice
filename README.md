@@ -1,5 +1,5 @@
-# imageservice
-Project to read, write and delete images
+# Project Imageservice
+Project to read, write and delete images, a service layer of an application like Instagram.
 
 # Requirements 
   The Project uses following py modules/libraries
