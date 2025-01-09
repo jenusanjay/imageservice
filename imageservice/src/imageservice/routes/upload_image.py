@@ -1,7 +1,7 @@
 import base64
 import io,os
 import uuid
-from fastapi import APIRouter, Query,Request, Response, Body
+from fastapi import APIRouter, Query,Request, Body
 from PIL import Image
 from imageservice.utils import Metadata, ResponseModel
 from starlette.responses import JSONResponse

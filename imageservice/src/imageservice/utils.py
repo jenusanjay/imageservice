@@ -39,7 +39,7 @@ class S3Writer():
     :parameters
     """
     def __init__(self):
-        self.bucket_name = "imagebucket2345" #os.environ.get("IMAGE_BUCKET_NAME")
+        self.bucket_name = "imageservice-storage-bucket" #os.environ.get("IMAGE_BUCKET_NAME")
         self.client = boto3.client("s3")
     
     def upload_image(self,metadata:MetadataModel,body:bytes):
@@ -111,7 +111,7 @@ class S3Writer():
 class DynamoDbWriter():
     def __init__(self):
         self.dynamodb = boto3.resource("dynamodb")
-        tableName = "metadatatable" # os.environ.get("METADATA_TABLE_NAME","metadatatale")
+        tableName = "imageservice-metadata" # os.environ.get("METADATA_TABLE_NAME","metadatatale")
         self.table = self.dynamodb.Table(tableName)
     
     def write_metadata(self,metadata:MetadataModel):
@@ -136,8 +136,7 @@ class DynamoDbWriter():
                     format=item.get("format"),
                     size=item.get("size"))
             else:
-                return None
-            
+                return []
         except:
             logging.error(f"Failed to list {traceback.format_exc(chain=False)}")
             return None
@@ -155,7 +154,7 @@ class DynamoDbWriter():
                     size=item.get("size")
                 ) for item in response.get("Items") ]
             else:
-                return None
+                return []
             
         except:
             logging.error(f"Failed to list {traceback.format_exc(chain=False)}")
@@ -206,11 +205,16 @@ class Metadata:
         try:
             dy = DynamoDbWriter()
             metadata = dy.get_meta_item(userId=itemInfo.userId,timestamp=itemInfo.timestamp)
-            S3Repo = S3Writer()
-            image = S3Repo.get_image(itemInfo=metadata)
-            return {
-                "timestamp":str(metadata.timestamp),
-                "image" : image }
+            if metadata != []:
+                S3Repo = S3Writer()
+                image = S3Repo.get_image(itemInfo=metadata)
+                return {
+                    "timestamp":str(metadata.timestamp),
+                    "image" : image }
+            else:
+                return {
+                    "timestamp": None,
+                    "image" : None }                
         except:
             logging.error(f"Failed to get item {traceback.format_exc(chain=False)}")
             return None
@@ -221,12 +225,11 @@ class Metadata:
         thumbnails = []
         items = dy.get_meta_items(userId=self.userId)
         try:
-            if items:
+            if items != []:
                 for item in items:
                     image = S3Repo.get_image(itemInfo=item)
                     image_bytes = base64.b64decode(image)
                     thumb = Image.open(BytesIO(image_bytes))
-
                     thumb.thumbnail((150, 150))
 
                     thumb_io = BytesIO()
@@ -239,7 +242,8 @@ class Metadata:
                         "thumbnail": thumbnail_base64}
                         )
                 return {"thumbnails": thumbnails}
-            
+            elif items == []:
+                return {"thumbnails": thumbnails}
             else:
                 None
 

@@ -25,10 +25,16 @@ def view_image(request:Request,
             userId=userId,
             timestamp=Decimal(timestamp)
         ))
-        return JSONResponse(
-            content=image,
-            status_code=200
-        )
+        if image.get("image"):
+            return JSONResponse(
+                content=image,
+                status_code=200
+            )
+        else:
+            return JSONResponse(
+                content={"Error": "File not found"},
+                status_code=404
+            )           
         
     except Exception as e:
         return JSONResponse(

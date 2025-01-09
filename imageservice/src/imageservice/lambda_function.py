@@ -1,6 +1,6 @@
 import os
 from mangum import Mangum
-from imageservice.src.api import app
+from imageservice.api import app
 
 lambda_handler = Mangum(
     app,
